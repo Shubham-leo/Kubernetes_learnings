@@ -1,0 +1,12 @@
+# Default values (dev environment)
+appName: my-web-app
+replicas: 2
+image:
+  repository: nginx
+  tag: "1.25"
+service:
+  type: ClusterIP
+  port: 80
+config:
+  environment: development
+  logLevel: debug

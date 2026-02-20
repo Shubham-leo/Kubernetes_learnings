@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Use the base as starting point
+resources:
+  - ../../base
+
+# Deploy to prod namespace
+namespace: prod
+
+# Add prod-specific labels
+commonLabels:
+  environment: prod
+
+# Apply patches
+patches:
+  - path: replica-patch.yaml

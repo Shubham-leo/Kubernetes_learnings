@@ -1,0 +1,16 @@
+# Kustomization file - tells kustomize what to manage
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Which YAML files to include
+resources:
+  - deployment.yaml
+  - service.yaml
+
+# Add these labels to ALL resources
+commonLabels:
+  managed-by: kustomize
+  project: k8s-learning
+
+# Add a name prefix to all resources
+namePrefix: demo-

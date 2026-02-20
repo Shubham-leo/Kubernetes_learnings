@@ -1,0 +1,17 @@
+# Custom values for bitnami/nginx chart
+# This overrides the chart's default values
+
+replicaCount: 2
+
+service:
+  type: NodePort
+  nodePorts:
+    http: 30080
+
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "100m"
+  limits:
+    memory: "128Mi"
+    cpu: "250m"

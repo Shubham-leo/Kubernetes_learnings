@@ -1,0 +1,12 @@
+# Production values - overrides defaults in values.yaml
+appName: my-web-app
+replicas: 5
+image:
+  repository: nginx
+  tag: "1.25"
+service:
+  type: NodePort
+  port: 80
+config:
+  environment: production
+  logLevel: error

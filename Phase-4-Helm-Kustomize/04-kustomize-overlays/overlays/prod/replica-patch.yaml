@@ -1,0 +1,14 @@
+# Prod patch: 5 replicas for production (handle traffic)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+        - name: nginx
+          env:
+            - name: ENVIRONMENT
+              value: production

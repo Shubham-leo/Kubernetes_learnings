@@ -1,0 +1,12 @@
+# The simplest possible Pod
+# Runs a single nginx container
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-first-pod
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+      ports:
+        - containerPort: 80

@@ -1,0 +1,38 @@
+# emptyDir - Temp storage shared between containers
+# Writer writes, Reader reads - they share the same volume
+apiVersion: v1
+kind: Pod
+metadata:
+  name: emptydir-pod
+spec:
+  containers:
+    # Container 1: writes a file every 5 seconds
+    - name: writer
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - while true; do
+            echo "$(date) - Hello from writer!" >> /shared/log.txt;
+            sleep 5;
+          done
+      volumeMounts:
+        - name: shared-data
+          mountPath: /shared
+
+    # Container 2: reads the file every 10 seconds
+    - name: reader
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - while true; do
+            echo "=== Reading shared file ===";
+            cat /shared/log.txt;
+            sleep 10;
+          done
+      volumeMounts:
+        - name: shared-data
+          mountPath: /shared
+
+  volumes:
+    - name: shared-data
+      emptyDir: {}           # temp storage, deleted when pod is deleted

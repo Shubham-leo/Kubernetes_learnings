@@ -1,0 +1,18 @@
+# Job that fails - demonstrates retry behavior
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: failing-job
+spec:
+  backoffLimit: 3              # retry up to 3 times, then give up
+  template:
+    spec:
+      containers:
+        - name: failer
+          image: busybox:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "Attempting task...";
+              echo "Something went wrong!";
+              exit 1           # non-zero exit = failure
+      restartPolicy: Never

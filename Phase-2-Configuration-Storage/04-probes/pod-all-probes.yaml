@@ -1,0 +1,36 @@
+# Pod with all 3 probes - realistic example with HTTP checks
+apiVersion: v1
+kind: Pod
+metadata:
+  name: all-probes-pod
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+      ports:
+        - containerPort: 80
+      # Startup Probe: "Has nginx finished starting?"
+      startupProbe:
+        httpGet:
+          path: /
+          port: 80
+        failureThreshold: 10          # allow 10 failures (10 x 3s = 30s to start)
+        periodSeconds: 3
+
+      # Liveness Probe: "Is nginx still responding?"
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 80
+        initialDelaySeconds: 0         # startup probe handles the delay
+        periodSeconds: 10
+        failureThreshold: 3
+
+      # Readiness Probe: "Is nginx ready for traffic?"
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 80
+        initialDelaySeconds: 0
+        periodSeconds: 5
+        failureThreshold: 1

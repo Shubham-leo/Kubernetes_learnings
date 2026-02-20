@@ -1,0 +1,17 @@
+# Simple Job - runs once and completes
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: math-job
+spec:
+  template:
+    spec:
+      containers:
+        - name: math
+          image: busybox:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "Starting calculation...";
+              echo "The answer to 6 x 7 is $(( 6 * 7 ))";
+              echo "Job done!"
+      restartPolicy: Never       # don't restart on success (required for Jobs)

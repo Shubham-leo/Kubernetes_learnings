@@ -1,0 +1,36 @@
+# DaemonSet - runs one pod on every node
+# Simulates a node monitoring agent
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-monitor
+spec:
+  selector:
+    matchLabels:
+      app: node-monitor
+  template:
+    metadata:
+      labels:
+        app: node-monitor
+    spec:
+      containers:
+        - name: monitor
+          image: busybox:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - while true; do
+                echo "=== Node Monitor Report ===";
+                echo "Time: $(date)";
+                echo "Hostname: $(hostname)";
+                echo "Uptime:"; cat /proc/uptime;
+                echo "Memory:"; cat /proc/meminfo | head -3;
+                echo "===========================";
+                sleep 30;
+              done
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"

@@ -1,0 +1,31 @@
+# Host-based Ingress
+# Routes traffic based on domain name
+#   myapp.local → frontend-svc
+#   api.local   → backend-svc
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: host-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: myapp.local              # domain for frontend
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-svc
+                port:
+                  number: 80
+    - host: api.local                # domain for backend
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-svc
+                port:
+                  number: 80

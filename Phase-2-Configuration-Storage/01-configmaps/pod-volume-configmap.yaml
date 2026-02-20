@@ -1,0 +1,23 @@
+# Pod that mounts ConfigMap as a file
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-volume-pod
+spec:
+  containers:
+    - name: app
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - echo "Reading config file:";
+          cat /etc/config/app.properties;
+          echo "---";
+          echo "Config loaded! Sleeping...";
+          sleep 3600
+      volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config       # ConfigMap appears as files here
+  volumes:
+    - name: config-volume
+      configMap:
+        name: app-file-config          # references our file ConfigMap

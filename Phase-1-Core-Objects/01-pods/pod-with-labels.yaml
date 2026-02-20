@@ -1,0 +1,16 @@
+# Pod with Labels
+# Labels are key-value pairs used to organize and select pods
+apiVersion: v1
+kind: Pod
+metadata:
+  name: labeled-pod
+  labels:
+    app: web
+    environment: dev
+    team: backend
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+      ports:
+        - containerPort: 80

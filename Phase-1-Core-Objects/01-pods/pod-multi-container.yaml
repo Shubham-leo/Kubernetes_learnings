@@ -1,0 +1,25 @@
+# Multi-container Pod (Sidecar Pattern)
+# Two containers share the same network (localhost) and can share volumes
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-container-pod
+  labels:
+    app: multi-demo
+spec:
+  containers:
+    # Main application container
+    - name: nginx
+      image: nginx:latest
+      ports:
+        - containerPort: 80
+
+    # Sidecar container - just prints a message every 5 seconds
+    - name: sidecar
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - while true; do
+            echo "$(date) - Sidecar is running alongside nginx!";
+            sleep 5;
+          done

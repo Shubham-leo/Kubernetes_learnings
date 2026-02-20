@@ -1,0 +1,24 @@
+# PersistentVolume - The actual storage (created by admin)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-pv
+spec:
+  capacity:
+    storage: 1Gi                    # 1 GB of storage
+  accessModes:
+    - ReadWriteOnce                 # one pod can read/write at a time
+  hostPath:
+    path: /tmp/k8s-pv-data         # where data lives on the node
+---
+# PersistentVolumeClaim - Request for storage (created by developer)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi              # "I need 500MB" → K8s finds a matching PV

@@ -1,0 +1,13 @@
+# Deny ALL incoming traffic to database pods
+# After applying this, NOTHING can reach the database
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-to-database
+spec:
+  podSelector:
+    matchLabels:
+      role: database            # applies to pods with role=database
+  policyTypes:
+    - Ingress                   # controls incoming traffic
+  ingress: []                   # empty = deny all incoming

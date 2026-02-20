@@ -1,0 +1,12 @@
+# ConfigMap with a full config file
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-file-config
+data:
+  app.properties: |
+    database.host=10.0.0.5
+    database.port=5432
+    database.name=myapp
+    app.mode=development
+    app.log_level=debug

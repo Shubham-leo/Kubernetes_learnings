@@ -1,0 +1,7 @@
+# Create a custom namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+  labels:
+    environment: development

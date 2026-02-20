@@ -1,0 +1,26 @@
+# CronJob - simulates a cleanup task every 2 minutes
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cleanup-cron
+spec:
+  schedule: "*/2 * * * *"            # every 2 minutes
+  concurrencyPolicy: Forbid          # don't start new if previous still running
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cleaner
+              image: busybox:latest
+              command: ["/bin/sh", "-c"]
+              args:
+                - echo "=== Cleanup started at $(date) ===";
+                  echo "Scanning for temp files...";
+                  sleep 3;
+                  echo "Found 15 temp files";
+                  echo "Deleting old files...";
+                  sleep 2;
+                  echo "Cleanup complete!";
+                  echo "=== Finished at $(date) ==="
+          restartPolicy: OnFailure

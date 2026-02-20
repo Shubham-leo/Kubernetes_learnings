@@ -1,0 +1,46 @@
+# Headless Service (required for StatefulSet DNS)
+# "Headless" = no ClusterIP, gives direct DNS to each pod
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-headless
+spec:
+  clusterIP: None                  # ← this makes it "headless"
+  selector:
+    app: web-stateful
+  ports:
+    - port: 80
+---
+# StatefulSet - pods with stable names and storage
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  serviceName: nginx-headless      # must match the headless service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-stateful
+  template:
+    metadata:
+      labels:
+        app: web-stateful
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: web-data
+              mountPath: /usr/share/nginx/html
+  # Each pod gets its OWN PVC (not shared)
+  volumeClaimTemplates:
+    - metadata:
+        name: web-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 100Mi

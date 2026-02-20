@@ -1,0 +1,23 @@
+# hostPath - Stores data on the node's disk
+# Data survives pod deletion (but tied to that specific node)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpath-pod
+spec:
+  containers:
+    - name: app
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - echo "Pod started! Data dir:";
+          ls /app/data;
+          sleep 3600
+      volumeMounts:
+        - name: host-data
+          mountPath: /app/data
+  volumes:
+    - name: host-data
+      hostPath:
+        path: /tmp/k8s-demo-data    # path on the node (minikube VM)
+        type: DirectoryOrCreate       # create if it doesn't exist

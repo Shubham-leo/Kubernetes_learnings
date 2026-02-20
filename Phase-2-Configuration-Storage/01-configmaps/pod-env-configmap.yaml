@@ -1,0 +1,19 @@
+# Pod that reads ConfigMap as environment variables
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-env-pod
+spec:
+  containers:
+    - name: app
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - echo "DB_HOST=$DB_HOST";
+          echo "DB_PORT=$DB_PORT";
+          echo "APP_MODE=$APP_MODE";
+          echo "Config loaded! Sleeping...";
+          sleep 3600
+      envFrom:                        # Load ALL keys from ConfigMap as env vars
+        - configMapRef:
+            name: app-config          # references our ConfigMap

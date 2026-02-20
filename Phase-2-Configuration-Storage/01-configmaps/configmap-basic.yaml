@@ -1,0 +1,9 @@
+# Simple ConfigMap - key-value pairs
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  DB_HOST: "10.0.0.5"
+  DB_PORT: "5432"
+  APP_MODE: "development"

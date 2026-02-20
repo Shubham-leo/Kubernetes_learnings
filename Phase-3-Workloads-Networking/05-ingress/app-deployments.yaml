@@ -1,0 +1,72 @@
+# Frontend app + service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          # Custom response so we know which app responded
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo '<h1>Frontend App</h1><p>You reached the frontend!</p>' > /usr/share/nginx/html/index.html;
+              nginx -g 'daemon off;'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-svc
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+---
+# Backend app + service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo '<h1>Backend API</h1><p>You reached the backend!</p>' > /usr/share/nginx/html/index.html;
+              nginx -g 'daemon off;'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-svc
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 80
+      targetPort: 80

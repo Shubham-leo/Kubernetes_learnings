@@ -1,0 +1,20 @@
+# Parallel Job - runs 5 completions, 3 at a time
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: parallel-job
+spec:
+  completions: 5              # total tasks to complete
+  parallelism: 3              # run 3 pods at the same time
+  template:
+    spec:
+      containers:
+        - name: worker
+          image: busybox:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "Worker $(hostname) started";
+              echo "Processing task...";
+              sleep 5;
+              echo "Worker $(hostname) finished!"
+      restartPolicy: Never

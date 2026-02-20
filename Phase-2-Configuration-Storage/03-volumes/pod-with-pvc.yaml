@@ -1,0 +1,22 @@
+# Pod that uses a PersistentVolumeClaim
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvc-pod
+spec:
+  containers:
+    - name: app
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - echo "Pod started with persistent storage!";
+          echo "Contents of /app/data:";
+          ls /app/data;
+          sleep 3600
+      volumeMounts:
+        - name: persistent-storage
+          mountPath: /app/data
+  volumes:
+    - name: persistent-storage
+      persistentVolumeClaim:
+        claimName: my-pvc          # references the PVC we created

@@ -1,0 +1,25 @@
+# Pod that exceeds memory limit - will get OOMKilled
+# This demonstrates what happens when a pod uses more memory than allowed
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oom-pod
+spec:
+  containers:
+    - name: memory-hog
+      image: python:3.12-slim
+      command: ["python", "-c"]
+      args:
+        - |
+          print("Allocating 200MB of memory...")
+          data = []
+          for i in range(200):
+              data.append(bytearray(1024 * 1024))  # 1MB per loop
+              print(f"Allocated {i+1} MB")
+          import time; time.sleep(3600)
+      resources:
+        requests:
+          memory: "32Mi"
+        limits:
+          memory: "50Mi"             # only 50MB allowed, but we try to use 200MB!
+          cpu: "100m"

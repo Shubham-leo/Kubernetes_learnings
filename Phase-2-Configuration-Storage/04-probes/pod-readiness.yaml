@@ -1,0 +1,26 @@
+# Readiness Probe Demo
+# This pod simulates an app that takes 15 seconds to start up.
+# The readiness probe checks if /tmp/ready exists.
+# Until the file exists, K8s won't send traffic to this pod.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: readiness-pod
+  labels:
+    app: readiness-demo
+spec:
+  containers:
+    - name: app
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - echo "App starting... not ready yet";
+          sleep 15;
+          touch /tmp/ready;
+          echo "App is now ready!";
+          sleep 3600
+      readinessProbe:
+        exec:
+          command: ["cat", "/tmp/ready"]
+        initialDelaySeconds: 5
+        periodSeconds: 3

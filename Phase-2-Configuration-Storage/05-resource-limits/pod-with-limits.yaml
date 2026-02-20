@@ -1,0 +1,26 @@
+# Pod with CPU and Memory resource limits
+apiVersion: v1
+kind: Pod
+metadata:
+  name: limited-pod
+spec:
+  containers:
+    - name: app
+      image: nginx:latest
+      ports:
+        - containerPort: 80
+      resources:
+        requests:                    # minimum guaranteed
+          memory: "64Mi"             # 64 MB RAM
+          cpu: "100m"                # 100 millicores = 0.1 CPU
+        limits:                      # maximum allowed
+          memory: "128Mi"            # 128 MB RAM
+          cpu: "250m"                # 250 millicores = 0.25 CPU
+# CPU units:
+#   1000m = 1 CPU core
+#   100m  = 0.1 CPU (10% of one core)
+#   250m  = 0.25 CPU (25% of one core)
+#
+# Memory units:
+#   Mi = Mebibytes (like MB)
+#   Gi = Gibibytes (like GB)

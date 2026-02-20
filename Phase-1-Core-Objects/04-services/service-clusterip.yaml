@@ -1,0 +1,14 @@
+# ClusterIP Service - Only accessible inside the cluster
+# Routes traffic to pods with label app=nginx-app
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-clusterip
+spec:
+  type: ClusterIP              # default type, can be omitted
+  selector:
+    app: nginx-app             # matches pods from our deployment
+  ports:
+    - port: 80                 # port the service listens on
+      targetPort: 80           # port on the pod to forward to
+      protocol: TCP

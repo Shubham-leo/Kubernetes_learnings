@@ -1,0 +1,20 @@
+# ReplicaSet - Maintains 3 copies of nginx pod
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-replicaset
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rs-demo          # "I manage pods with this label"
+  template:                  # This is the Pod template
+    metadata:
+      labels:
+        app: rs-demo        # Must match selector above!
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80

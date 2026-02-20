@@ -1,0 +1,21 @@
+# Deployment inside the "dev" namespace
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-in-dev
+  namespace: dev                  # <-- deployed to dev namespace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-dev
+  template:
+    metadata:
+      labels:
+        app: nginx-dev
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80

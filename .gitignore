@@ -1,9 +1,6 @@
 # Ignore minikube data
 .minikube-data/
 
-# Ignore progress file
-PROGRESS.md
-
 # Ignore system files
 .DS_Store
 Thumbs.db

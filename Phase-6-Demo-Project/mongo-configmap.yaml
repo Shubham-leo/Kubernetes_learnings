@@ -1,0 +1,9 @@
+# ConfigMap - stores the MongoDB service URL
+# Mongo Express needs to know WHERE MongoDB is running
+# We use the Service DNS name (not IP, because IP can change)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-configmap
+data:
+  mongo-url: mongodb-service    # this is the Service name from mongo-deployment.yaml

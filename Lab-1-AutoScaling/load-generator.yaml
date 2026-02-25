@@ -1,0 +1,12 @@
+# Generates CPU load by sending infinite requests to the app
+apiVersion: v1
+kind: Pod
+metadata:
+  name: load-generator
+spec:
+  containers:
+    - name: busybox
+      image: busybox:1.36
+      command: ["/bin/sh", "-c"]
+      args:
+        - while true; do wget -q -O- http://php-apache-svc > /dev/null 2>&1; done

@@ -14,11 +14,31 @@ Add Node-4:                       Add Node-4:
   Node-4: (nothing)                 Node-4: Pod  (auto-added!)
 ```
 
-## Real world examples
-- **Log collector** (Fluentd, Filebeat) - collect logs from every node
-- **Monitoring agent** (Prometheus node-exporter) - monitor every node
-- **Network plugin** (Calico, Cilium) - networking on every node
-- **Storage daemon** - storage driver on every node
+## Real world use cases
+```
+1. Log Collector (Fluentd/Filebeat)
+   Every node generates logs → need a collector on EVERY node
+
+2. Monitoring Agent (Prometheus)
+   Need to monitor CPU/memory on EVERY node
+
+3. Network Plugin (Calico/Cilium)
+   Networking must work on EVERY node
+
+4. Security Scanner
+   Need to scan EVERY node for vulnerabilities
+```
+
+### Our example
+We're running a **monitoring agent** that reports hostname, uptime, and memory
+from each node every 30 seconds. Since minikube has only 1 node, you'll see
+only 1 pod. In production with 50 nodes, you'd automatically get 50 pods!
+
+### When to use what?
+```
+"I want 3 copies of my app"     → Deployment
+"I want it on EVERY node"       → DaemonSet
+```
 
 ## DaemonSet vs Deployment
 

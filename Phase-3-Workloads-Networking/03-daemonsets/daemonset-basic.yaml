@@ -18,14 +18,15 @@ spec:
           image: busybox:latest
           command: ["/bin/sh", "-c"]
           args:
-            - while true; do
-                echo "=== Node Monitor Report ===";
-                echo "Time: $(date)";
-                echo "Hostname: $(hostname)";
-                echo "Uptime:"; cat /proc/uptime;
-                echo "Memory:"; cat /proc/meminfo | head -3;
-                echo "===========================";
-                sleep 30;
+            - |
+              while true; do
+                echo "=== Node Monitor Report ==="
+                echo "Time - $(date)"
+                echo "Hostname - $(hostname)"
+                echo "Uptime -" && cat /proc/uptime
+                echo "Memory -" && cat /proc/meminfo | head -3
+                echo "==========================="
+                sleep 30
               done
           resources:
             requests:

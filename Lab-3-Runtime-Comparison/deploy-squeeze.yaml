@@ -1,0 +1,177 @@
+# Resource squeeze test: same apps but with only 50m CPU limit
+# ========== 1. Go App (Squeezed) ==========
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go-app
+  template:
+    metadata:
+      labels:
+        app: go-app
+    spec:
+      containers:
+        - name: go-app
+          image: golang:1.22-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cat > /tmp/main.go << 'EOF'
+              package main
+              import (
+                "encoding/json"
+                "fmt"
+                "net/http"
+                "runtime"
+                "time"
+              )
+              func fib(n int) int {
+                if n <= 1 { return n }
+                return fib(n-1) + fib(n-2)
+              }
+              func main() {
+                http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+                  start := time.Now()
+                  result := fib(30)
+                  var m runtime.MemStats
+                  runtime.ReadMemStats(&m)
+                  json.NewEncoder(w).Encode(map[string]interface{}{
+                    "language": "Go",
+                    "fibonacci_30": result,
+                    "compute_time_ms": time.Since(start).Milliseconds(),
+                    "memory_mb": m.Alloc / 1024 / 1024,
+                  })
+                })
+                fmt.Println("Go server on :8080")
+                http.ListenAndServe(":8080", nil)
+              }
+              EOF
+              cd /tmp && go run main.go
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "256Mi"
+            limits:
+              cpu: "50m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-app-svc
+spec:
+  selector:
+    app: go-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# ========== 2. Python Flask App (Squeezed) ==========
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: python-app
+  template:
+    metadata:
+      labels:
+        app: python-app
+    spec:
+      containers:
+        - name: python-app
+          image: python:3.12-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              pip install flask --quiet
+              cat > /tmp/app.py << 'PYEOF'
+              from flask import Flask, jsonify
+              import time
+              app = Flask(__name__)
+              def fib(n):
+                  if n <= 1: return n
+                  return fib(n-1) + fib(n-2)
+              @app.route("/")
+              def index():
+                  start = time.time()
+                  result = fib(30)
+                  return jsonify({
+                      "language": "Python (Flask)",
+                      "fibonacci_30": result,
+                      "compute_time_ms": round((time.time() - start) * 1000),
+                  })
+              if __name__ == "__main__":
+                  print("Python Flask server on :5000")
+                  app.run(host="0.0.0.0", port=5000)
+              PYEOF
+              python /tmp/app.py
+          ports:
+            - containerPort: 5000
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "256Mi"
+            limits:
+              cpu: "50m"
+              memory: "768Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-app-svc
+spec:
+  selector:
+    app: python-app
+  ports:
+    - port: 5000
+      targetPort: 5000
+---
+# ========== 3. Rust App (Squeezed) ==========
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rust-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rust-app
+  template:
+    metadata:
+      labels:
+        app: rust-app
+    spec:
+      containers:
+        - name: rust-app
+          image: rust-fib-server:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8090
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "32Mi"
+            limits:
+              cpu: "50m"
+              memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rust-app-svc
+spec:
+  selector:
+    app: rust-app
+  ports:
+    - port: 8090
+      targetPort: 8090

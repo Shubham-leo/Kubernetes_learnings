@@ -1,6 +1,6 @@
 # Kubernetes — Where It Fits
 
-Your problem: everything runs on one VM. If it dies, all calls drop. Scaling means buying a bigger VM.
+Our problem: everything runs on one VM. If it dies, all calls drop. Scaling means buying a bigger VM.
 
 ---
 
@@ -30,11 +30,11 @@ Your problem: everything runs on one VM. If it dies, all calls drop. Scaling mea
 
 ### agent-node — Biggest Win
 
-One pod per room, auto-scales from 2 to 50. This is the whole point of moving to Kubernetes. HPA (Horizontal Pod Autoscaler) watches room count and spins up new agent pods automatically. When rooms close, pods scale back down. You only pay for what you use.
+One pod per room, auto-scales from 2 to 50. This is the whole point of moving to Kubernetes. HPA (Horizontal Pod Autoscaler) watches room count and spins up new agent pods automatically. When rooms close, pods scale back down. We only pay for what we use.
 
 ### landing-page — Easy Win
 
-Stateless, trivial to scale. Put it behind a Deployment with 2-3 replicas and you get zero-downtime deploys for free.
+Stateless, trivial to scale. Put it behind a Deployment with 2-3 replicas and we get zero-downtime deploys for free.
 
 ### monitor-node — Easy Win
 
@@ -42,7 +42,7 @@ Stateless, same as landing-page. Replicas handle WebSocket connections from admi
 
 ### PostgreSQL / Redis — Don't Run in K8s
 
-Use **Azure managed services** (Azure Database for PostgreSQL, Azure Cache for Redis). You don't want to manage database failover, backups, and persistent storage inside K8s. Let Azure handle that.
+Use **Azure managed services** (Azure Database for PostgreSQL, Azure Cache for Redis). We don't want to manage database failover, backups, and persistent storage inside K8s. Let Azure handle that.
 
 ### LiveKit — Hardest
 
@@ -83,11 +83,11 @@ Needs UDP port range 50000-60000 for media. Two options:
 
 ## Bottom Line
 
-**Yes, worth it when you need >15 concurrent rooms.** The agent-node auto-scaling alone justifies K8s.
+**Yes, worth it when we need >15 concurrent rooms.** The agent-node auto-scaling alone justifies K8s.
 
 Easiest path:
 - AKS cluster
 - Azure managed PostgreSQL + Redis
 - LiveKit Cloud
-- You manage three Deployments: `agent-node`, `landing-page`, `monitor-node`
-- You get: auto-scaling, self-healing, rolling updates, network isolation
+- We manage three Deployments: `agent-node`, `landing-page`, `monitor-node`
+- We get: auto-scaling, self-healing, rolling updates, network isolation

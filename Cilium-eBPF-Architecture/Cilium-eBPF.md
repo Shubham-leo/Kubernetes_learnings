@@ -19,7 +19,7 @@ eBPF networking:
   Packet arrives → kernel runs your eBPF program (one hash lookup) → your app
 ```
 
-eBPF hooks into specific kernel attach points (XDP, TC ingress/egress, socket-level). In a Kubernetes context with Cilium, this covers ALL pod-to-pod and pod-to-service traffic. No code changes needed in your app.
+eBPF hooks into specific kernel attach points (XDP, TC ingress/egress, socket-level). In a Kubernetes context with Cilium, this covers ALL pod-to-pod and pod-to-service traffic. No code changes needed in our app.
 
 ## What is Cilium?
 
@@ -53,9 +53,9 @@ Azure VNet
 
 ---
 
-## In Your Architecture
+## In Our Architecture
 
-You have: `agent-node`, `monitor-node`, `landing-page`, Azure OpenAI, PostgreSQL, Redis, LiveKit.
+We have: `agent-node`, `monitor-node`, `landing-page`, Azure OpenAI, PostgreSQL, Redis, LiveKit.
 
 Here's what Cilium actually does for each.
 
@@ -68,7 +68,7 @@ Here's what Cilium actually does for each.
 **With Cilium:** Rules enforced in the kernel, before the packet reaches userspace.
 
 ```
-What you define:                          What happens at kernel level:
+What we define:                           What happens at kernel level:
 
 agent-node  → Azure OpenAI    ALLOW       eBPF program checks source identity
 agent-node  → PostgreSQL       DENY        against policy map. Match = forward.
@@ -82,7 +82,7 @@ landing-page → Azure OpenAI    DENY
 
 This is **blast-radius reduction at kernel level**.
 
-> **AKS bonus:** With ACNS (Advanced Container Networking Services) enabled, you also get **L7 policies** — filter by HTTP method and path. Example: allow GET `/api/rooms` but deny DELETE `/api/rooms`. And **FQDN policies** — allow `agent-node` to reach `openai.azure.com` but nothing else on the internet.
+> **AKS bonus:** With ACNS (Advanced Container Networking Services) enabled, we also get **L7 policies** — filter by HTTP method and path. Example: allow GET `/api/rooms` but deny DELETE `/api/rooms`. And **FQDN policies** — allow `agent-node` to reach `openai.azure.com` but nothing else on the internet.
 
 ---
 
@@ -90,23 +90,23 @@ This is **blast-radius reduction at kernel level**.
 
 Cilium ships with **Hubble** — a network observability layer that sees every flow in the cluster.
 
-What Hubble gives you:
+What Hubble gives us:
 
 | Metric | How It Helps |
 |---|---|
 | Pod-to-pod connection map | See exactly who talks to who, live |
 | TCP flow counts | Track connection volume per service |
-| DNS query logs | See every DNS lookup your pods make |
+| DNS query logs | See every DNS lookup our pods make |
 | Dropped packets + reason | Know WHY a connection failed, not just that it failed |
 | Latency per service | Spot slow backends (requires L7 visibility) |
 | HTTP status codes (4xx/5xx) | Monitor error rates (requires L7 visibility) |
 
-**What this means for you:**
+**What this means for us:**
 
-Your `monitor-node` tracks business metrics — rooms, users, call quality.
+Our `monitor-node` tracks business metrics — rooms, users, call quality.
 Hubble tracks infrastructure metrics — connection flows, DNS, packet drops, latency.
 
-They complement each other. Right now if a K6 test fails, you're guessing where traffic dropped. Hubble shows you exactly.
+They complement each other. Right now if a K6 test fails, we're guessing where traffic dropped. Hubble shows us exactly.
 
 ```
 Example Hubble output:
@@ -141,7 +141,7 @@ One lookup, done. No chain walking.
 
 **Real numbers from Microsoft:** Azure CNI powered by Cilium delivers ~30% higher throughput and ~30% lower service routing latency at 16,000 pods compared to kube-proxy.
 
-For your real-time voice traffic, lower routing overhead = lower jitter. It's not a massive change at small scale, but it's cleaner and scales better as you add agent pods.
+For our real-time voice traffic, lower routing overhead = lower jitter. It's not a massive change at small scale, but it's cleaner and scales better as we add agent pods.
 
 ---
 
@@ -149,7 +149,7 @@ For your real-time voice traffic, lower routing overhead = lower jitter. It's no
 
 Cilium provides eBPF-based load balancing with Maglev consistent hashing and socket-level rewriting (at `connect()` time, not per-packet NAT). This is more efficient than iptables-based random selection.
 
-For your `monitor-node` WebSocket connections from admin dashboards: Cilium's load balancing distributes new TCP connections more evenly across pods. Once a WebSocket connection is established though, it stays pinned to one pod — that's just how long-lived connections work. The improvement is on **initial connection distribution**, not ongoing WebSocket routing.
+For our `monitor-node` WebSocket connections from admin dashboards: Cilium's load balancing distributes new TCP connections more evenly across pods. Once a WebSocket connection is established though, it stays pinned to one pod — that's just how long-lived connections work. The improvement is on **initial connection distribution**, not ongoing WebSocket routing.
 
 ---
 
@@ -160,147 +160,21 @@ Be honest about the boundaries:
 | Thing | Why Cilium Can't Help |
 |---|---|
 | LiveKit UDP media | If using `hostNetwork`, pods share the node's identity — per-pod network policies don't apply. Service routing still works, but you lose fine-grained isolation. Use node-level `CiliumClusterwideNetworkPolicy` for coarser host rules |
-| Windows dev environment | eBPF is Linux-only. It only runs on cluster nodes, not your dev machine |
-| Application bugs | Cilium is networking. It doesn't fix your code |
-| LLM response time | Azure OpenAI latency is Azure's problem, not your network's |
+| Windows dev environment | eBPF is Linux-only. It only runs on cluster nodes, not our dev machines |
+| Application bugs | Cilium is networking. It doesn't fix our code |
+| LLM response time | Azure OpenAI latency is Azure's problem, not our network's |
 | Replacing Azure Firewall | Cilium handles east-west (pod-to-pod). Azure Firewall handles north-south (internet ingress/egress). They're different layers |
 
 ---
 
-## AKS Setup
-
-### Basic (Free)
-
-```bash
-# Create AKS cluster with Cilium
-az aks create \
-  --name my-cluster \
-  --resource-group my-rg \
-  --location eastus \
-  --network-plugin azure \
-  --network-plugin-mode overlay \
-  --pod-cidr 192.168.0.0/16 \
-  --network-dataplane cilium \
-  --generate-ssh-keys
-```
-
-The key flag is **`--network-dataplane cilium`**.
-
-NOT `--network-policy cilium` (that's a common mistake — wrong flag).
-
-This gives you: kube-proxy replacement, L3/L4 network policies, basic Hubble flow logs.
-
-### With ACNS (Paid — Adds L7 and Observability)
-
-```bash
-az aks create \
-  --name my-cluster \
-  --resource-group my-rg \
-  --location eastus \
-  --network-plugin azure \
-  --network-plugin-mode overlay \
-  --pod-cidr 192.168.0.0/16 \
-  --network-dataplane cilium \
-  --enable-acns \
-  --generate-ssh-keys
-```
-
-This adds: L7 network policies (HTTP/gRPC filtering), FQDN policies, Hubble metrics + dashboards, eBPF host routing.
-
-### Verify
-
-```bash
-# Check Cilium status
-kubectl get pods -n kube-system -l k8s-app=cilium
-
-# Check Hubble
-kubectl get pods -n kube-system -l k8s-app=hubble-relay
-
-# Verify no kube-proxy (should return nothing)
-kubectl get pods -n kube-system -l component=kube-proxy
-```
-
----
-
-## Example: Network Policy for Your Architecture
-
-```yaml
-# Only agent-node can reach Azure OpenAI (outbound)
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: agent-egress
-spec:
-  endpointSelector:
-    matchLabels:
-      app: agent-node
-  egress:
-    # Allow DNS
-    - toEndpoints:
-        - matchLabels:
-            io.kubernetes.pod.namespace: kube-system
-            k8s-app: kube-dns
-      toPorts:
-        - ports:
-            - port: "53"
-              protocol: UDP
-    # Allow Azure OpenAI
-    - toFQDNs:
-        - matchPattern: "*.openai.azure.com"
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-    # Allow Redis
-    - toEndpoints:
-        - matchLabels:
-            app: redis
-      toPorts:
-        - ports:
-            - port: "6379"
-              protocol: TCP
----
-# Default deny all egress for landing-page
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: landing-page-lockdown
-spec:
-  endpointSelector:
-    matchLabels:
-      app: landing-page
-  egress:
-    # DNS only
-    - toEndpoints:
-        - matchLabels:
-            io.kubernetes.pod.namespace: kube-system
-            k8s-app: kube-dns
-      toPorts:
-        - ports:
-            - port: "53"
-              protocol: UDP
-    # Only talk to agent-node service
-    - toEndpoints:
-        - matchLabels:
-            app: agent-node
-      toPorts:
-        - ports:
-            - port: "8080"
-              protocol: TCP
-```
-
-> **Note:** FQDN policies (`toFQDNs`) require ACNS on AKS. Without ACNS, use CIDR-based rules for external endpoints.
-
----
-
-## Should You Use It?
+## Should We Use It?
 
 | Feature | Worth It? | Cost |
 |---|---|---|
 | kube-proxy replacement | YES — free performance upgrade | Free (base Cilium) |
 | L3/L4 network policies | YES — real security with zero effort | Free (base Cilium) |
 | Hubble flow logs | YES — see who talks to who | Free (base Cilium) |
-| L7 policies (HTTP filtering) | YES if you need fine-grained API control | Paid (ACNS) |
+| L7 policies (HTTP filtering) | YES if we need fine-grained API control | Paid (ACNS) |
 | FQDN policies | YES for controlling outbound to Azure OpenAI | Paid (ACNS) |
 | Hubble metrics + dashboards | NICE for production monitoring | Paid (ACNS) |
 

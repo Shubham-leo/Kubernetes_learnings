@@ -1,0 +1,90 @@
+# THE SOLUTION: Graceful shutdown with preStop hook + SIGTERM handling
+#
+# The shutdown sequence:
+#   1. K8s decides to terminate the pod (rolling update, scale-down, etc.)
+#   2. Two things happen IN PARALLEL:
+#      a. kube-proxy starts removing pod from iptables/IPVS (takes 1-3s)
+#      b. preStop hook runs → sleeps 5s (gives kube-proxy time to finish)
+#   3. After preStop completes, K8s sends SIGTERM
+#   4. Go's http.Server.Shutdown() stops accepting new connections
+#      but waits for in-flight requests to complete
+#   5. Pod exits cleanly with 0
+#
+# The result: ZERO dropped requests during rolling updates
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-backend
+  labels:
+    app: go-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: go-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # KEY: maxUnavailable=0 means K8s must have the NEW pod Ready
+      # before it starts terminating the OLD pod.
+      # Combined with maxSurge=1, it creates 1 extra pod, waits for it
+      # to pass readiness, then terminates 1 old pod. Zero downtime.
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: go-backend
+    spec:
+      # 60 seconds total for the entire shutdown sequence:
+      #   5s preStop + up to 25s drain + buffer = well within 60s
+      # If the pod doesn't exit within 60s, K8s sends SIGKILL
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: go-backend
+          image: go-backend:v1
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+
+          # Readiness probe: K8s only sends traffic to pods that pass this.
+          # During shutdown, /health returns 503 → pod gets removed from
+          # Service endpoints (belt AND suspenders with preStop)
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 3
+            failureThreshold: 2
+
+          # Liveness probe: if the app hangs, K8s restarts it
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # preStop hook: runs BEFORE SIGTERM, IN PARALLEL with kube-proxy
+          # updating iptables. The 5s sleep ensures no new traffic arrives
+          # at this pod by the time SIGTERM fires.
+          lifecycle:
+            preStop:
+              httpGet:
+                path: /prestop
+                port: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-svc
+spec:
+  selector:
+    app: go-backend
+  ports:
+    - port: 8080
+      targetPort: 8080

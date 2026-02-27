@@ -1,0 +1,62 @@
+# THE PROBLEM: No graceful shutdown handling
+#
+# What goes wrong during a rolling update:
+# 1. K8s sends SIGTERM to the pod
+# 2. Pod starts dying IMMEDIATELY — stops serving requests
+# 3. BUT kube-proxy hasn't updated iptables yet (takes 1-3s)
+# 4. Frontend still sends requests to the dying pod → 502/504 errors
+#
+# Missing:
+#   - No preStop hook (no delay for kube-proxy to catch up)
+#   - No readiness probe (K8s can't tell when the app is actually ready)
+#   - Aggressive rolling update (maxUnavailable: 1 means pods die fast)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-backend
+  labels:
+    app: go-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: go-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # PROBLEM: allows 1 pod to be unavailable during update
+      # This means traffic goes to the remaining pod, which may also be terminating
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: go-backend
+    spec:
+      # Default: 30s — may not be enough if requests take long
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: go-backend
+          image: go-backend:v1
+          imagePullPolicy: Never  # Use local Minikube image
+          ports:
+            - containerPort: 8080
+          # No readiness probe — K8s considers the pod "ready" as soon as
+          # the container starts, even if the app isn't listening yet.
+          # No liveness probe either.
+
+          # NO preStop hook — the pod dies immediately on SIGTERM
+          # without giving kube-proxy time to update endpoints.
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-svc
+spec:
+  selector:
+    app: go-backend
+  ports:
+    - port: 8080
+      targetPort: 8080

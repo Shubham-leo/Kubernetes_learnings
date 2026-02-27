@@ -1,0 +1,63 @@
+# THE PROBLEM: No graceful shutdown, no explicit timeouts
+#
+# What goes wrong:
+# 1. Frontend pod gets SIGTERM during rolling update
+# 2. gunicorn kills workers immediately (no graceful-timeout in this version)
+# 3. In-flight requests to Go backend are dropped mid-response → 502
+# 4. No connection timeout means if backend is dying, frontend hangs → 504
+#
+# Missing:
+#   - No preStop hook
+#   - No readiness probe
+#   - No explicit backend connection timeouts (uses defaults)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-frontend
+  labels:
+    app: python-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: python-frontend
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: python-frontend
+          image: python-frontend:v1
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          # No readiness probe
+          # No preStop hook
+          # No explicit timeouts — using Python requests defaults (no timeout!)
+          env:
+            - name: BACKEND_URL
+              value: "http://backend-svc:8080"
+            # Deliberately NOT setting CONNECT_TIMEOUT and READ_TIMEOUT
+            # to show what happens with default (infinite) timeouts
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-svc
+spec:
+  type: NodePort  # Accessible from outside the cluster for K6 testing
+  selector:
+    app: python-frontend
+  ports:
+    - port: 5000
+      targetPort: 5000
+      nodePort: 30500
